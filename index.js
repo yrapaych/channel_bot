@@ -8,7 +8,24 @@ const bot = new Telegraf(process.env.token)
 bot.telegram.getMe().then((botInfo) => {
     bot.options.username = botInfo.username
 })
-  
+
+const sendToChannel=async (reply)=>{
+    if(reply){
+        if(reply.photo)
+        {
+            bot.telegram.sendPhoto(process.env.channel, reply.photo[0].file_id,{caption:process.env.channel})
+        }else if(reply.audio)
+        {
+            bot.telegram.sendAudio(process.env.channel, reply.audio.file_id,{caption:process.env.channel})
+
+        } else if(reply.video){
+            bot.telegram.sendVideo(process.env.channel, reply.video.file_id,{caption:+process.env.channel})
+        } 
+        else if(reply.text){
+            bot.telegram.sendMessage(process.env.channel, reply.text + '\n\n'+process.env.channel)
+        }
+    }
+}
 
 bot.start(async (mes) => {
     bot.stop()
@@ -20,41 +37,45 @@ bot.command('newadmin', async (ctx)=>{
         await newAdmin(ctx.message.reply_to_message.from.id)
     }
 })
+bot.hears('id', async(ctx)=>{
+    console.log(ctx.message)
+})
 bot.command('post', async (mes)=>{
     if(adminList.find(elem=>elem.id === mes.message.from.id)){
-        const reply = mes.message.reply_to_message
-        if(reply){
-            if(reply.photo)
-            {
-                bot.telegram.sendPhoto(process.env.channel, reply.photo[0].file_id,{caption:(reply.caption?reply.caption:'')+"\n\n"+process.env.channel})
-            }else if(reply.audio)
-            {
-                bot.telegram.sendAudio(process.env.channel, reply.audio.file_id,{caption:'\n\n'+process.env.channel})
-
-            } else if(reply.video){
-                bot.telegram.sendVideo(process.env.channel, reply.video.file_id,{caption:(reply.caption?reply.caption:'')+'\n\n'+process.env.channel})
-            } 
-            else if(reply.text){
-                bot.telegram.sendMessage(process.env.channel, reply.text + '\n\n'+process.env.channel)
-            }
-        }
+        sendToChannel(mes.message.reply_to_message)
     }
 })
 bot.on('photo', async ctx=>{
-    if(ctx.chat.id ===process.env.adminchat)return
-    ctx.telegram.sendPhoto(process.env.adminchat, ctx.message.photo[0].file_id, {caption:ctx.message.caption?ctx.message.caption:''+'\n\nBy '+ctx.message.from.first_name})
+    if(!ctx.chat.type.includes('private')) return;
+    if(adminList.find(elem=>elem.id === ctx.message.from.id)){
+        sendToChannel(ctx.message)
+        return
+    }
+    ctx.telegram.sendPhoto(process.env.adminchat, ctx.message.photo[0].file_id )
 })
 bot.on('text', async ctx=>{
-    if(ctx.chat.id ===process.env.adminchat)return
-    ctx.telegram.sendMessage(process.env.adminchat, ctx.message.text + '\n\nBy '+ctx.message.from.first_name)
+    if(!ctx.chat.type.includes('private')) return;
+    if(adminList.find(elem=>elem.id === ctx.message.from.id)){
+        sendToChannel(ctx.message)
+        return
+    }
+    ctx.telegram.sendMessage(process.env.adminchat, ctx.message.text)
 })
 bot.on('video', async ctx=>{
-    if(ctx.chat.id ===process.env.adminchat)return
-    ctx.telegram.sendVideo(process.env.adminchat, ctx.message.video.file_id, {caption:ctx.message.caption?ctx.message.caption:''+'\n\nBy '+ctx.message.from.first_name})
+    if(!ctx.chat.type.includes('private')) return;
+    if(adminList.find(elem=>elem.id === ctx.message.from.id)){
+        sendToChannel(ctx.message)
+        return
+    }
+    ctx.telegram.sendVideo(process.env.adminchat, ctx.message.video.file_id)
 })
 bot.on('audio', async ctx=>{
-    if(ctx.chat.id ===process.env.adminchat)return
-    ctx.telegram.sendAudio(process.env.adminchat, ctx.message.audio.file_id, {caption:'\n\nBy '+ctx.message.from.first_name})
+    if(!ctx.chat.type.includes('private')) return;
+    if(adminList.find(elem=>elem.id === ctx.message.from.id)){
+        sendToChannel(ctx.message)
+        return
+    }
+    ctx.telegram.sendAudio(process.env.adminchat, ctx.message.audio.file_id)
 })
 
 
