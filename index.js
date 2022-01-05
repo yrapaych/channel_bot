@@ -9,20 +9,24 @@ bot.telegram.getMe().then((botInfo) => {
     bot.options.username = botInfo.username
 })
 
-const sendToChannel=async (reply)=>{
+const sendToChannel=async (reply, message=null)=>{
     if(reply){
+        let mes = reply
+        if(message){
+            mes = message
+        }
         if(reply.photo)
         {
-            bot.telegram.sendPhoto(process.env.channel, reply.photo[0].file_id,{caption:process.env.channel})
+            bot.telegram.sendPhoto(process.env.channel, reply.photo[0].file_id,{caption:'By '+ mes.from.first_name +'\n'+ process.env.channel})
         }else if(reply.audio)
         {
-            bot.telegram.sendAudio(process.env.channel, reply.audio.file_id,{caption:process.env.channel})
+            bot.telegram.sendAudio(process.env.channel, reply.audio.file_id,{caption:'By '+ mes.from.first_name +'\n'+ process.env.channel})
 
         } else if(reply.video){
-            bot.telegram.sendVideo(process.env.channel, reply.video.file_id,{caption:+process.env.channel})
+            bot.telegram.sendVideo(process.env.channel, reply.video.file_id,{caption:'By '+ mes.from.first_name +'\n'+ process.env.channel})
         } 
         else if(reply.text){
-            bot.telegram.sendMessage(process.env.channel, reply.text + '\n\n'+process.env.channel)
+            bot.telegram.sendMessage(process.env.channel, reply.text + '\n\nBy '+ mes.from.first_name +'\n'+ process.env.channel)
         }
     }
 }
@@ -34,7 +38,7 @@ bot.start(async (mes) => {
 })
 bot.command('newadmin', async (ctx)=>{
     if(adminList.find(elem=>elem.id === ctx.message.from.id)){
-        await newAdmin(ctx.message.reply_to_message.from.id)
+        await newAdmin(ctx.message.reply_to_message.from.id,ctx.message.reply_to_message.from.first_name, ctx.message.reply_to_message.from.username)
     }
 })
 bot.hears('id', async(ctx)=>{
@@ -42,7 +46,7 @@ bot.hears('id', async(ctx)=>{
 })
 bot.command('post', async (mes)=>{
     if(adminList.find(elem=>elem.id === mes.message.from.id)){
-        sendToChannel(mes.message.reply_to_message)
+        sendToChannel(mes.message.reply_to_message, mes.message)
     }
 })
 bot.on('photo', async ctx=>{
