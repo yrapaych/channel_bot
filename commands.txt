@@ -1,0 +1,2 @@
+post - Reply to messages for publishing
+newadmin - Reply to a guy to make him new admin
