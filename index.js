@@ -1,13 +1,24 @@
 const { Telegraf } = require('telegraf')
 const mongoose = require('mongoose')
 const {getAdmins, newAdmin} = require('./mongoActions')
+const express = require('express')
 require('dotenv').config()
 
 const bot = new Telegraf(process.env.token)
+const secretPath = `/telegraf/${bot.secretPathComponent()}`
+bot.telegram.setWebhook('https://zelenyi-klyin.ua'+secretPath)
 
 bot.telegram.getMe().then((botInfo) => {
     bot.options.username = botInfo.username
 })
+
+const app = express()
+app.get('/', (req, res) => res.send('Hello World!'))
+// Set the bot API endpoint
+app.use(bot.webhookCallback(secretPath))
+
+
+
 
 const sendToChannel=async (reply, message=null)=>{
     if(reply){
@@ -36,11 +47,13 @@ const sendToChannel=async (reply, message=null)=>{
 bot.start(async (mes) => {
     bot.stop()
     await mongoose.disconnect()
-    start()
+    startBot()
 })
 bot.command('newadmin', async (ctx)=>{
     if(adminList.find(elem=>elem.id === ctx.message.from.id)){
+        await mongoose.connect(process.env.mongoDB)
         await newAdmin(ctx.message.reply_to_message.from.id,ctx.message.reply_to_message.from.first_name, ctx.message.reply_to_message.from.username)
+        await mongoose.disconnect()
     }
 })
 bot.command('post', async (mes)=>{
@@ -83,10 +96,18 @@ bot.on('audio', async ctx=>{
 
 
 
-async function start () {
+async function startBot () {
     await mongoose.connect(process.env.mongoDB)
     adminList = await getAdmins()
-    await bot.launch()
+    await mongoose.disconnect()
 }
-
-start()
+async function startApp(){
+    try{
+        app.listen(process.env.PORT, ()=>console.log(`Has started ${process.env.PORT}`))
+    }catch (e){
+        console.log('Server error', e.message)
+        process.exit(1)
+    }
+}
+startBot()
+startApp()
